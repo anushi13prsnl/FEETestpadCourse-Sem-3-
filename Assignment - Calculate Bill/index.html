@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill Details</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+        }
+        .bill-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .total-amount {
+            text-align: right;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Bill Details</h2>
+    <pre id="bill-output"></pre>
+</div>
+
+<script>
+    const items = [
+        { id: "item1", itemName: "Butter Roti", rate: 20, taxes: [{ name: "Service Charge", rate: 10, isInPercent: 'Y' }], category: { categoryId: "C2" } },
+        { id: "item2", itemName: "Paneer Butter Masala", rate: 150, taxes: [{ name: "GST", rate: 5, isInPercent: 'Y' }], category: { categoryId: "C1" } }
+    ];
+
+    const categories = [
+        { id: "C1", categoryName: "Platters", superCategory: { superCategoryName: "South Indian", id: "SC1" } },
+        { id: "C2", categoryName: "Breads", superCategory: { superCategoryName: "North Indian", id: "SC2" } }
+    ];
+
+    const bill = {
+        id: "B1",
+        billNumber: 1,
+        opentime: "06 Nov 2020 14:19",
+        customerName: "CodeQuotient",
+        billItems: [
+            { id: "item2", quantity: 3, discount: { rate: 10, isInPercent: 'Y' } },
+            { id: "item1", quantity: 5, discount: { rate: 5, isInPercent: 'N' } }
+        ]
+    };
+
+    // Task 1: Function to return basic bill items
+    function getBillItems(items, bill) {
+        return {
+            id: bill.id,
+            billNumber: bill.billNumber,
+            opentime: bill.opentime,
+            customerName: bill.customerName,
+            billItems: bill.billItems.map(billItem => {
+                const item = items.find(i => i.id === billItem.id);
+                return {
+                    id: billItem.id,
+                    name: item ? item.itemName : 'Unknown Item',
+                    quantity: billItem.quantity
+                };
+            })
+        };
+    }
+
+    // Task 2: Function to return detailed bill with taxes and total amount
+    function calculateTotalBill(items, categories, bill) {
+        let totalAmount = 0;
+        
+        const detailedBill = {
+            id: bill.id,
+            billNumber: bill.billNumber,
+            opentime: bill.opentime,
+            customerName: bill.customerName,
+            billItems: bill.billItems.map(billItem => {
+                const item = items.find(i => i.id === billItem.id);
+                const category = categories.find(c => c.id === item.category.categoryId);
+                
+                let itemAmount = item.rate * billItem.quantity;
+                
+                // Apply discount
+                if (billItem.discount) {
+                    const discountAmount = billItem.discount.isInPercent === 'Y' ?
+                        itemAmount * (billItem.discount.rate / 100) : billItem.discount.rate;
+                    itemAmount -= discountAmount;
+                }
+
+                // Apply taxes
+                let totalTax = 0;
+                if (item.taxes) {
+                    item.taxes.forEach(tax => {
+                        const taxAmount = tax.isInPercent === 'Y' ?
+                            itemAmount * (tax.rate / 100) : tax.rate;
+                        totalTax += taxAmount;
+                    });
+                }
+                itemAmount += totalTax;
+
+                totalAmount += itemAmount;
+
+                return {
+                    id: item.id,
+                    name: item.itemName,
+                    quantity: billItem.quantity,
+                    discount: billItem.discount,
+                    taxes: item.taxes,
+                    amount: itemAmount.toFixed(2),
+                    superCategoryName: category.superCategory.superCategoryName,
+                    categoryName: category.categoryName
+                };
+            }),
+            totalAmount: totalAmount.toFixed(2)
+        };
+
+        return detailedBill;
+    }
+
+    // Display result for both tasks
+    const task1Result = getBillItems(items, bill);
+    const task2Result = calculateTotalBill(items, categories, bill);
+
+    document.getElementById('bill-output').textContent = JSON.stringify(task2Result, null, 2);
+
+</script>
+
+</body>
+</html>
